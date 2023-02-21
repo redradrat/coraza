@@ -44,7 +44,11 @@ type WAF struct {
 	// Array of logging parts to be used
 	AuditLogParts types.AuditLogParts
 
+	// If true, at least one rule references the request body
+	hasRulesForRequestBody bool
+
 	// If true, transactions will have access to the request body
+	// if any rule requires it
 	RequestBodyAccess bool
 
 	// Request body page file limit
@@ -150,7 +154,7 @@ func (w *WAF) newTransactionWithID(id string) *Transaction {
 	tx.AuditEngine = w.AuditEngine
 	tx.AuditLogParts = w.AuditLogParts
 	tx.ForceRequestBodyVariable = false
-	tx.RequestBodyAccess = w.RequestBodyAccess
+	tx.RequestBodyAccess = w.RequestBodyAccess && (w.hasRulesForRequestBody || w.RequestBodyLimitAction == types.BodyLimitActionReject)
 	tx.RequestBodyLimit = int64(w.RequestBodyLimit)
 	tx.ResponseBodyAccess = w.ResponseBodyAccess
 	tx.ResponseBodyLimit = int64(w.ResponseBodyLimit)
@@ -335,6 +339,8 @@ func (w *WAF) Validate() error {
 	if w.ResponseBodyLimit > _1gb {
 		return errors.New("response body limit should be at most 1GB")
 	}
+
+	w.hasRulesForRequestBody = hasRulesForRequestBody(w.Rules)
 
 	return nil
 }
