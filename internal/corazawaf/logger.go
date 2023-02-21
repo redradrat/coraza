@@ -54,8 +54,9 @@ func (l *stdDebugLogger) Trace(message string, args ...interface{}) {
 // SetLevel sets the log level
 func (l *stdDebugLogger) SetLevel(level loggers.LogLevel) {
 	if level.Invalid() {
+		l.Level = loggers.LogLevelInfo
 		l.Info("Invalid log level, defaulting to INFO")
-		level = loggers.LogLevelInfo
+		return
 	}
 	l.Level = level
 }

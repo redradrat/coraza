@@ -4,6 +4,7 @@
 package corazawaf
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/corazawaf/coraza/v3/loggers"
@@ -52,9 +53,31 @@ func TestLoggerLogLevels(t *testing.T) {
 					t.Fatalf("Unexpected log. Level: %d, Function: %s", settedLevel, name)
 				}
 			}
-
 		})
 	}
+
+	t.Run("Invalid", func(t *testing.T) {
+		l := &inspectableLogger{}
+		waf.Logger.SetOutput(l)
+		waf.Logger.SetLevel(loggers.LogLevelError)
+		waf.Logger.SetLevel(loggers.LogLevel(11))
+		waf.Logger.Warn("first log")
+		waf.Logger.Debug("second log")
+
+		if want, have := 2, len(l.entries); want != have {
+			fmt.Println(l.entries)
+			t.Fatalf("Unexpected number of logs. want: %d, have: %d", want, have)
+
+		}
+
+		if want, have := "[INFO] Invalid log level, defaulting to INFO\n", l.entries[0]; want != have {
+			t.Errorf("Unexpected log message. want: %q, have: %q", want, have)
+		}
+
+		if want, have := "[WARN] first log\n", l.entries[1]; want != have {
+			t.Errorf("Unexpected log message. want: %q, have: %q", want, have)
+		}
+	})
 }
 
 func TestLoggerLevelDefaultsToInfo(t *testing.T) {
